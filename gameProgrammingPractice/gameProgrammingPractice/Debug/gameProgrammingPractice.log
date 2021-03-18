@@ -1,0 +1,5 @@
+﻿  Game.cpp
+C:\Users\Number1Bae\source\repos\gameProgrammingPractice\gameProgrammingPractice\Game.cpp(181,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\Number1Bae\source\repos\gameProgrammingPractice\gameProgrammingPractice\Game.cpp(200,15): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+C:\Users\Number1Bae\source\repos\gameProgrammingPractice\gameProgrammingPractice\Game.cpp(201,15): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+  gameProgrammingPractice.vcxproj -> C:\Users\Number1Bae\source\repos\gameProgrammingPractice\Debug\gameProgrammingPractice.exe
