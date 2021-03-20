@@ -1,12 +1,15 @@
 //we use quotes for header files in same directory as source file
 #include "Game.h" 
+#include "SpriteComponent.h"
 //we use brackets for standard libraries 
 #include <iostream>
 #include <vector>
 
+
+using namespace std; 
+
 const int width = 800; 
 const int height = 600;
-const int thickness = 15;
 
 
 Game::Game() {
@@ -19,7 +22,12 @@ bool Game::Initialize() {
 	//and returns an int that is an or operator
 	//on whether appropriate binaries have initialized 
 	int sdlResult = SDL_Init(SDL_INIT_VIDEO);
+	//load sdl img lib
 
+	//was giving weird errors, and noticed it is not required to init
+	//so we just ignoring this shit
+	//IMG_Init(IMG_INIT_PNG); 
+	
 	//(if int != 0, then not initialized) 
 	if (sdlResult != 0) {
 		//SDL_Log function similar to printf except prints to console in sdl
@@ -53,22 +61,15 @@ bool Game::Initialize() {
 
 	//initalize the timer since game init
 	mTicksCount = 0; 
-
-	//initialize positions
-	mPaddleOnePos = { mPaddleThickness/2.0f, height / 2};
-	mPaddleTwoPos = { static_cast<float>(width) - mPaddleThickness/2, height / 2};
-	//initalize balls (their velocity and pos) 
-	for (int i = 1; i < 4; i++) {
-		mBalls.push_back({
-			{static_cast<float>(width) / (i+1), static_cast<float>(height) / (i+1)},
-			{ 100.0f * i, 100.0f * i}
-		}
-		);
-	}
 	return true; 
 }
 
 void Game::Shutdown() {
+	// Because ~Actor calls RemoveActor, use a different style loop
+	while (!mActors.empty()) {
+		mActors.erase(mActors.end());
+	}
+
 	//destroys window and closes SDL with the two functions
 	SDL_DestroyWindow(mWindow); 
 	SDL_DestroyRenderer(mRenderer);
@@ -110,25 +111,6 @@ void Game::ProcessInput() {
 	if (state[SDL_SCANCODE_ESCAPE]) {
 		mIsRunning = false; 
 	}
-
-	//get user input for paddle direction 
-	//first paddle
-	mPaddleOneDir = 0; 
-	if (state[SDL_SCANCODE_W]) {
-		mPaddleOneDir -= 1;
-	}
-	if (state[SDL_SCANCODE_S]) {
-		mPaddleOneDir += 1;
-	}
-	//second paddle
-	mPaddleTwoDir = 0;
-	if (state[SDL_SCANCODE_I]) {
-		mPaddleTwoDir -= 1;
-	}
-	if (state[SDL_SCANCODE_K]) {
-		mPaddleTwoDir += 1;
-	}
-
 }
 
 void Game::UpdateGame() {
@@ -137,79 +119,45 @@ void Game::UpdateGame() {
 
 	//Delta time is the difference in ticks from last frame
 	//(converted to seconds) 
-	float deltaTime = (SDL_GetTicks() - mTicksCount) / 1000.0f; 
+	float deltaTime = (SDL_GetTicks() - mTicksCount) / 1000.0f;
 	//Update tick counts (for next frame) 
-	mTicksCount = SDL_GetTicks(); 
+	mTicksCount = SDL_GetTicks();
 
 	//Clamp maximum delta time value 
 	if (deltaTime > 0.05f) {
-		deltaTime = 0.05f; 
+		deltaTime = 0.05f;
 	}
-	
+
 	//TODO: update objects in game world as function of delta time 
 	//we use delta time to account for the varying speeds of processors 
 	//(i.e. we move an object a certain number of pixels per frame based 
 	//on how many pixels per second we want an object to move) 
-	//update paddle
-	//first paddle
-	if (mPaddleOneDir != 0) {
-		//move paddle up/down 300px per second 
-		mPaddleOnePos.y += mPaddleOneDir * 600.0f * deltaTime;
 
-		//make sure paddle doesnt go off screen 
-		//NOTE: source code adds a gap the size of thickness 
-		//for more info, see pg. 112 
-		if (mPaddleOnePos.y < (mPaddleH / 2.0f)) {
-			mPaddleOnePos.y = mPaddleH / 2.0f;
-		}
-		else if (mPaddleOnePos.y > (height - mPaddleH/2)) {
-			mPaddleOnePos.y = static_cast<float>(height) - mPaddleH / 2;
-		}
+	//update each actor
+	mUpdatingActors = true;
+	for (auto actor : mActors) {
+		actor->Update(deltaTime);
 	}
-	//second paddle
-	if (mPaddleTwoDir != 0) {
-		//move paddle up/down 300px per second 
-		mPaddleTwoPos.y += mPaddleTwoDir * 600.0f * deltaTime;
+	mUpdatingActors = false;
 
-		//make sure paddle doesnt go off screen 
-		//NOTE: source code adds a gap the size of thickness 
-		//for more info, see pg. 112 
-		if (mPaddleTwoPos.y < (mPaddleH / 2.0f)) {
-			mPaddleTwoPos.y = mPaddleH / 2.0f;
-		}
-		else if (mPaddleTwoPos.y > (height - mPaddleH/2)) {
-			mPaddleTwoPos.y = height - mPaddleH/2;
+	//move pending actors into actors vectors
+	for (auto pending : mPendingActors) {
+		mActors.emplace_back(pending);
+	}
+	mPendingActors.clear();
+
+	//Add any dead actors to a tmp vector
+	std::vector<Actor*> deadActors;
+	for (auto actor : mActors) {
+		if (actor->GetState() == Actor::EDead) {
+			deadActors.emplace_back(actor); 
 		}
 	}
 
-	//update ball 
-	for (int i = 0; i < 3; i++) {
-		Ball* b = &(mBalls[i]); 
-
-		(*b).pos.x += (*b).vel.x * deltaTime;
-		(*b).pos.y += (*b).vel.y * deltaTime;
-
-		//check for wall collisions
-		if (mBalls[i].pos.y <= thickness && mBalls[i].vel.y < 0.0f) {
-			mBalls[i].vel.y *= -1;
-		}if (mBalls[i].pos.y >= height - thickness && mBalls[i].vel.y > 0.0f) {
-			mBalls[i].vel.y *= -1;
-		}
-
-		//check if ball hits paddle
-		int diffOne = abs(mPaddleOnePos.y - mBalls[i].pos.y);
-		int diffTwo = abs(mPaddleTwoPos.y - mBalls[i].pos.y);
-		if (diffOne <= mPaddleH / 2.0f &&
-			mBalls[i].pos.x >= 0.0f &&
-			mBalls[i].pos.x <= mPaddleOnePos.x + mPaddleThickness / 2 &&
-			mBalls[i].vel.x < 0.0f) {
-			mBalls[i].vel.x *= -1;
-		}
-		if (diffTwo <= mPaddleH / 2.0f &&
-			mBalls[i].pos.x <= width &&
-			mBalls[i].pos.x >= mPaddleTwoPos.x - mPaddleThickness / 2 &&
-			mBalls[i].vel.x > 0.0f) {
-			mBalls[i].vel.x *= -1;
+	//Delete dead actors (which removes them from mActors
+	for (auto actor : deadActors) {
+		while (!mActors.empty()) {
+			delete mActors.back(); 
 		}
 	}
 }
@@ -231,45 +179,39 @@ void Game::GenerateOutput() {
 	//DRAW THE ENTIRE GAME SCENE  
 	//Change the draw color to white
 	SDL_SetRenderDrawColor(mRenderer, 255, 255, 255, 255); 
-	//draw the rectangle 
-	SDL_Rect wall{
-		0, // top left x
-		0, // top left y
-		width, //width of rect
-		thickness //height of rect
-	};
-	SDL_RenderFillRect(mRenderer, &wall); 
-	//Draw ball 
-	SDL_Rect paddleOne{
-		//here we are converting (aka casting) floats from Vector2 struct
-		//into ints (using the stat_cast<int>)
-		static_cast<int>(mPaddleOnePos.x - mPaddleThickness/2),
-		//NOTE: by subtracting half the thickness, we are centering the obj
-		static_cast<int>(mPaddleOnePos.y - mPaddleH / 2),
-		mPaddleThickness, //width
-		mPaddleH //height
-	};
-	SDL_Rect paddleTwo{
-		static_cast<int>(mPaddleTwoPos.x - mPaddleThickness/2),
-		//NOTE: by subtracting half the thickness, we are centering the obj
-		static_cast<int>(mPaddleTwoPos.y - mPaddleH / 2),
-		mPaddleThickness,
-		mPaddleH
-	};
-
-	for (int i = 0; i < 3; i++) {
-		SDL_Rect mball{
-			static_cast<int>(mBalls[i].pos.x - thickness / 2),
-			static_cast<int>(mBalls[i].pos.y - thickness / 2),
-			thickness, 
-			thickness  
-		};
-		SDL_RenderFillRect(mRenderer, &mball);
-	}
-	SDL_RenderFillRect(mRenderer, &paddleOne);
-	SDL_RenderFillRect(mRenderer, &paddleTwo);
 	//FINISH DRAWING GAME SCENE 
 
 	//SWAP THE FRONT BUFFER AND THE BACK BUFFER
 	SDL_RenderPresent(mRenderer);
+}
+
+void Game::AddActor(Actor * actor) {
+	//if updating actors need to add to pending
+	if (mUpdatingActors) {
+		mPendingActors.emplace_back(actor);
+	}
+	else {
+		mActors.emplace_back(actor);
+	}
+}
+
+void Game::RemoveActor(Actor* actor) {
+	//TODO: FIGURE THIS SHIT OUT
+	delete (actor); 
+}
+
+void Game::AddSprite(SpriteComponent* sprite) {
+	//Find the insertion point in the sorted vector
+	//(The first element with a higher draw order than than this one)
+	int myDrawOrder = sprite->GetDrawOrder(); 
+	auto iter = mSprites.begin(); 
+
+	for (; iter != mSprites.end(); ++iter) {
+		if (myDrawOrder < (*iter)->GetDrawOrder()) {
+			break; 
+		}
+	}
+
+	//Inserts element before position of iterator 
+	mSprites.insert(iter, sprite);
 }

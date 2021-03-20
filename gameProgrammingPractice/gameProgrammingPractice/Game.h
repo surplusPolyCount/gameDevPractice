@@ -1,19 +1,13 @@
 #pragma once
 #include <SDL.h>
+#include <SDL_image.h>
 #include <vector>
+//using forward declaration here which is 
+//used for classes that have not been initialized yet
+class Actor;
+class SpriteComponent; 
 
 class Game {
-
-struct Vector2
-{
-	float x;
-	float y;
-};
-
-struct Ball {
-	Vector2 pos; 
-	Vector2 vel; 
-};
 
 public: 
 	Game(); 
@@ -23,6 +17,12 @@ public:
 	void RunLoop(); 
 	//shutdown the game
 	void Shutdown(); 
+
+	//functions for handling actor
+	void AddActor(Actor * actor); 
+	void RemoveActor(Actor * actor); 
+
+	void AddSprite(SpriteComponent* sprite); 
 
 private: 
 	//helper functions for the game loop
@@ -41,13 +41,9 @@ private:
 	//since SLD_Init function call
 	Uint32 mTicksCount;
 
-	//mem var for direction paddle should move based on user inpt
-	int mPaddleOneDir;
-	int mPaddleTwoDir; 
-	//member variables for positios of paddle and ball
-	Vector2 mPaddleOnePos;
-	Vector2 mPaddleTwoPos; 
-	int mPaddleThickness = 15;
-	int mPaddleH = mPaddleThickness * 6;
-	std::vector<Ball> mBalls;
+	std::vector<Actor*> mActors; 
+	std::vector<Actor*> mPendingActors; 
+	bool mUpdatingActors; 
+
+	std::vector<SpriteComponent*> mSprites; 
 };
