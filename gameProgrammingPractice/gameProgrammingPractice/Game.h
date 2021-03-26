@@ -1,11 +1,12 @@
 #pragma once
 #include <SDL.h>
-#include <SDL_image.h>
 #include <vector>
+#include <SDL_image.h>
 //using forward declaration here which is 
 //used for classes that have not been initialized yet
 class Actor;
 class SpriteComponent; 
+class BGSpriteComponent; 
 
 class Game {
 
@@ -22,7 +23,12 @@ public:
 	void AddActor(Actor * actor); 
 	void RemoveActor(Actor * actor); 
 
+	SDL_Texture* LoadTexture(const char* fileName);
 	void AddSprite(SpriteComponent* sprite); 
+
+	void LoadData(); 
+
+	//function for getting/loading textures? 
 
 private: 
 	//helper functions for the game loop
@@ -35,7 +41,7 @@ private:
 	//game should continue to run 
 	bool mIsRunning; 
 	//object to reference before drawing something
-	SDL_Renderer* mRenderer; 
+	SDL_Renderer* mRenderer;
 
 	//member var that stores number of milliseconds elapsed
 	//since SLD_Init function call
@@ -46,4 +52,7 @@ private:
 	bool mUpdatingActors; 
 
 	std::vector<SpriteComponent*> mSprites; 
+
+	//game specifc 
+	SDL_Texture* mbgrnd; 
 };

@@ -1,5 +1,16 @@
 #include "SpriteComponent.h"
 #include "Math.h"
+#include "Game.h"
+
+SpriteComponent::SpriteComponent(class Actor* owner, int drawOrder) 
+	:Component(owner)
+		, mTexture(nullptr)
+		, mDrawOrder(drawOrder)
+		, mTexWidth(0)
+		, mTexHeight(0)
+{
+		mOwner->GetGame()->AddSprite(this);
+}
 
 void SpriteComponent::SetTexture(SDL_Texture* texture) {
 	mTexture = texture; 
@@ -13,7 +24,7 @@ void SpriteComponent::Draw(SDL_Renderer* renderer) {
 		//Scale the width/height by owner's scale
 
 		r.w = static_cast<int>(mTexWidth * mOwner->GetScale());
-		r.h = static_cast<int>(mTexWidth * mOwner->GetScale());
+		r.h = static_cast<int>(mTexHeight * mOwner->GetScale());
 
 		//center the rect around the position of the owner
 		r.x = static_cast<int>(mOwner->GetPosition().x);
@@ -32,5 +43,7 @@ void SpriteComponent::Draw(SDL_Renderer* renderer) {
 			nullptr,  //point of rotation 
 			SDL_FLIP_NONE // Flip behavior 
 			); 
+	}
+	else {
 	}
 }

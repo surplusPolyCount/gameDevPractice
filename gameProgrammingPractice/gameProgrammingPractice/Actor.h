@@ -1,13 +1,9 @@
 #pragma once
 #include <vector>
+#include "Math.h"
+class Component;
 
 class Actor {
-
-struct Vector2
-{
-	float x;
-	float y;
-};
 
 public: 
 	//used to check the state of actor
@@ -35,6 +31,7 @@ public:
 	virtual Vector2 GetPosition() const { return mPosition; }
 	float GetScale() const { return mScale; }
 	float GetRotation() const { return mRotation; }
+	Game* GetGame() const { return mGame; }
 
 	//Add/remove components
 	void AddComponent(class Component* component); 

@@ -6,8 +6,8 @@
 class SpriteComponent : public Component {
 public: 
 	//(Lower draw order corresponds with further back)
-	SpriteComponent(class Actor* owner, int drawOrder); 
-	~SpriteComponent(); 
+	SpriteComponent(class Actor* owner = nullptr, int drawOrder = 100); 
+	//~SpriteComponent(); 
 	virtual void Draw(SDL_Renderer* renderer); 
 	virtual void SetTexture(SDL_Texture* texture); 
 

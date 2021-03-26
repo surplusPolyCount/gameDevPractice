@@ -1,15 +1,18 @@
 //we use quotes for header files in same directory as source file
 #include "Game.h" 
 #include "SpriteComponent.h"
+#include "BGSpriteComponent.h"
+#include "Actor.h"
 //we use brackets for standard libraries 
 #include <iostream>
+#include <SDL_image.h>
 #include <vector>
 
 
 using namespace std; 
 
-const int width = 800; 
-const int height = 600;
+const int width = 1280; 
+const int height = 800;
 
 
 Game::Game() {
@@ -23,6 +26,7 @@ bool Game::Initialize() {
 	//on whether appropriate binaries have initialized 
 	int sdlResult = SDL_Init(SDL_INIT_VIDEO);
 	//load sdl img lib
+	IMG_Init(IMG_INIT_PNG);
 
 	//was giving weird errors, and noticed it is not required to init
 	//so we just ignoring this shit
@@ -61,6 +65,9 @@ bool Game::Initialize() {
 
 	//initalize the timer since game init
 	mTicksCount = 0; 
+
+	//load game data 
+	LoadData();
 	return true; 
 }
 
@@ -179,6 +186,11 @@ void Game::GenerateOutput() {
 	//DRAW THE ENTIRE GAME SCENE  
 	//Change the draw color to white
 	SDL_SetRenderDrawColor(mRenderer, 255, 255, 255, 255); 
+	
+	for(auto spr : mSprites){
+		spr->Draw(mRenderer); 
+	}
+	
 	//FINISH DRAWING GAME SCENE 
 
 	//SWAP THE FRONT BUFFER AND THE BACK BUFFER
@@ -214,4 +226,37 @@ void Game::AddSprite(SpriteComponent* sprite) {
 
 	//Inserts element before position of iterator 
 	mSprites.insert(iter, sprite);
+}
+
+SDL_Texture* Game::LoadTexture(const char* fileName) {
+	//Load from file
+	SDL_Surface* surf = IMG_Load(fileName); 
+	if (!surf) {
+		SDL_Log("Failed to load texture file %s", fileName); 
+		SDL_Log("IMG_Load: %s\n", IMG_GetError());
+		return nullptr; 
+	}
+	//create texture from surface 
+	SDL_Texture* text = SDL_CreateTextureFromSurface(mRenderer, surf); 
+	SDL_FreeSurface(surf);
+	if (!text) {
+		SDL_Log("Failed to convert surface to texture for %s", fileName); 
+		return nullptr; 
+	}
+	return text; 
+}
+
+
+void Game::LoadData() {
+	//generate background
+	Actor* background = new Actor(this);
+	
+	//create background sprite
+	SpriteComponent* bgFront =  new SpriteComponent(background, 1);
+
+	mbgrnd = LoadTexture("Assets/Chapter2_Sprites/bckgrnd1.png");
+
+	bgFront->SetTexture(mbgrnd);
+	
+	this->AddSprite(bgFront);
 }
