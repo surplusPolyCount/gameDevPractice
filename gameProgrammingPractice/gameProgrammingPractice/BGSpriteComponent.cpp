@@ -1,8 +1,8 @@
 #include "BGSpriteComponent.h"
 
-BGSpriteComponent::BGSpriteComponent(class Actor* owner, int drawOrder) {
-	mDrawOrder = drawOrder; 
-	mOwner = owner; 
+BGSpriteComponent::BGSpriteComponent(class Actor* owner, int drawOrder)
+	:SpriteComponent(owner, drawOrder), mTexWidth(1280), mTexHeight(800), mScrollSpeed(-100.0f), mScreenSize({ 1280, 800 })
+{
 }
 
 void BGSpriteComponent::SetBGTextures(const std::vector<SDL_Texture*> & textures) {
@@ -16,11 +16,17 @@ void BGSpriteComponent::SetBGTextures(const std::vector<SDL_Texture*> & textures
 		temp.mOffset.y = 0; 
 		mBGTextures.emplace_back(temp); 
 		count++;
+		/*
+		int w, h; 
+		SDL_QueryTexture(tex, nullptr, nullptr, &w, &h);
+		SDL_Log("width and height are: %d %d", w, h);
+		*/
 	}
+	SDL_Log("set up bg textures with size: %d", mBGTextures.size());
 }
 
 void BGSpriteComponent::Update(float deltaTime){
-	SpriteComponent::Update(deltaTime); 
+	//SpriteComponent::Update(deltaTime); 
 	for (auto& bg : mBGTextures) {
 		//update the x offset
 		bg.mOffset.x += mScrollSpeed * deltaTime; 
@@ -29,6 +35,7 @@ void BGSpriteComponent::Update(float deltaTime){
 		if (bg.mOffset.x < -mScreenSize.x) {
 			bg.mOffset.x = (mBGTextures.size() - 1) * mScreenSize.x - 1;
 		}
+		SDL_Log("UPDATE: current pos x and y: %f %f", bg.mOffset.x, bg.mOffset.y);
 	}
 }
 
@@ -38,24 +45,22 @@ void BGSpriteComponent::Draw(SDL_Renderer* renderer) {
 		//Scale the width/height by owner's scale
 
 		r.w = static_cast<int>(mTexWidth * mOwner->GetScale());
-		r.h = static_cast<int>(mTexWidth * mOwner->GetScale());
+		r.h = static_cast<int>(mTexHeight * mOwner->GetScale());
 
-		//center the rect around the position of the owner
-		r.x = static_cast<int>(mOwner->GetPosition().x);
+		//TODO: make this shit relative to the center of the obj
+		//center the rect around the position of the owner (relative to center of object) 
+		r.x = static_cast<int>(mOwner->GetPosition().x + bg.mOffset.x);
 		r.y = static_cast<int>(mOwner->GetPosition().y);
-
-		//Draw
-		//assumes that the pos of actor corresponds to its pos onscreen 
-		//i.e. won't work for a game where the game world is
-		//larger than one single screen
-		SDL_RenderCopyEx(
-			renderer,
-			bg.mTexture, //Texture to draw
-			nullptr,  //Source rectangle
-			&r,       //destination rectangle
-			-Math::ToDegrees(mOwner->GetRotation()), // (Convert angle)
-			nullptr,  //point of rotation 
-			SDL_FLIP_NONE // Flip behavior 
+		//TODO: fix this bottom line of code with the right shiat
+		//r.y = static_cast<int>(mOwner->GetPosition().y - r.h / 2 + bg.mOffset.y);
+			
+		//Draw rectangle w texture
+		SDL_RenderCopy(
+			renderer,   //renderer 
+			bg.mTexture,//Texture to draw
+			nullptr,    //Source rectangle
+			&r          //destination rectangle
 		);
+		SDL_Log("DRAW: current pos x and y: %f %f", bg.mOffset.x, bg.mOffset.y, mTexWidth);
 	}
 }

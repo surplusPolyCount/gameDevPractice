@@ -1,15 +1,22 @@
 #include "Actor.h"
 #include "Component.h"
+#include "Game.h"
 
-Actor::Actor(class Game* game) {
-	mGame = game; 
-	mScale = 1; 
-	mPosition = { 0,0 };
-	mRotation = 0;
+Actor::Actor(class Game* game)
+	:mState(EActive),
+	mGame(game),
+	mScale(1),
+	mRotation(0),
+	mPosition({ 0,0 })
+{
+	mGame->AddActor(this);
 };
 
 void Actor::Update(float deltaTime) {
-	UpdateComponents(deltaTime);
+	if (mState == EActive) {
+		UpdateComponents(deltaTime);
+		UpdateActor(deltaTime);
+	}
 }
 
 void Actor::UpdateComponents(float deltaTime) {

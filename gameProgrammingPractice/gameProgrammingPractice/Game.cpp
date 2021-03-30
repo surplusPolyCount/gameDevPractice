@@ -24,20 +24,14 @@ bool Game::Initialize() {
 	//function initializes desired flag (in this case SDL_INIT_VIDEO)
 	//and returns an int that is an or operator
 	//on whether appropriate binaries have initialized 
-	int sdlResult = SDL_Init(SDL_INIT_VIDEO);
+	//(if int != 0, then not initialized) 
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		//SDL_Log function similar to printf except prints to console in sdl
+		SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+		return false;
+	}
 	//load sdl img lib
 	IMG_Init(IMG_INIT_PNG);
-
-	//was giving weird errors, and noticed it is not required to init
-	//so we just ignoring this shit
-	//IMG_Init(IMG_INIT_PNG); 
-	
-	//(if int != 0, then not initialized) 
-	if (sdlResult != 0) {
-		//SDL_Log function similar to printf except prints to console in sdl
-		SDL_Log("Unable to initialize SDL: %s", SDL_GetError()); 
-		return false; 
-	}
 
 	//initialize window pointer 
 	mWindow = SDL_CreateWindow(
@@ -72,9 +66,10 @@ bool Game::Initialize() {
 }
 
 void Game::Shutdown() {
+	IMG_Quit();
 	// Because ~Actor calls RemoveActor, use a different style loop
 	while (!mActors.empty()) {
-		mActors.erase(mActors.end());
+		delete(*mActors.end());
 	}
 
 	//destroys window and closes SDL with the two functions
@@ -142,6 +137,7 @@ void Game::UpdateGame() {
 
 	//update each actor
 	mUpdatingActors = true;
+	SDL_Log("Updating that Actor shit: %d", mActors.size());
 	for (auto actor : mActors) {
 		actor->Update(deltaTime);
 	}
@@ -178,7 +174,7 @@ void Game::GenerateOutput() {
 	//specify the buffer draw color 
 	SDL_SetRenderDrawColor(
 		mRenderer,		//renderer pointer 
-		70, 70, 175, 255 //RGBA
+		150, 150, 150, 255 //RGBA
 	);
 	//clear the back buffer to the current draw color 
 	SDL_RenderClear(mRenderer);
@@ -226,6 +222,7 @@ void Game::AddSprite(SpriteComponent* sprite) {
 
 	//Inserts element before position of iterator 
 	mSprites.insert(iter, sprite);
+	SDL_Log("theoretically should be added");
 }
 
 SDL_Texture* Game::LoadTexture(const char* fileName) {
@@ -250,13 +247,23 @@ SDL_Texture* Game::LoadTexture(const char* fileName) {
 void Game::LoadData() {
 	//generate background
 	Actor* background = new Actor(this);
-	
+	Actor* player	  = new Actor(this); 
+
 	//create background sprite
-	SpriteComponent* bgFront =  new SpriteComponent(background, 1);
+	BGSpriteComponent* bgFrnt =  new BGSpriteComponent(background, 5);
 
-	mbgrnd = LoadTexture("Assets/Chapter2_Sprites/bckgrnd1.png");
+	SpriteComponent* playerSprite = new SpriteComponent(player, 10); 
+	//SpriteComponent* bgSprite = new SpriteComponent(background, 10); 
 
-	bgFront->SetTexture(mbgrnd);
+	playerSprite->SetTexture(LoadTexture("Assets/Chapter2_Sprites/player.png"));
+	//bgSprite->SetTexture(LoadTexture("Assets/Chapter2_Sprites/bckgrnd1.png"));
 	
-	this->AddSprite(bgFront);
+	//get & set the texture and put in vect
+	std::vector<SDL_Texture *> mbgrnds = { 
+		LoadTexture("Assets/Chapter2_Sprites/bckgrnd1.png"),
+		LoadTexture("Assets/Chapter2_Sprites/bckgrnd1.png")
+	};
+
+	bgFrnt->SetBGTextures(mbgrnds);
+	SDL_Log("completed loading");
 }

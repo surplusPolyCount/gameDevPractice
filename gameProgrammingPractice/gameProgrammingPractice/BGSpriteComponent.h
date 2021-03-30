@@ -26,6 +26,8 @@ private:
 		Vector2 mOffset; 
 	};
 	std::vector<BGTexture> mBGTextures; 
+	int mTexWidth; 
+	int mTexHeight; 
 	Vector2 mScreenSize; 
 	float mScrollSpeed; 
 };
